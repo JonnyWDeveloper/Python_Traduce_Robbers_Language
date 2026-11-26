@@ -1,186 +1,141 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 import argparse
+import sys
 
-consonants = "bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWZ"
-vowels = "aeiouyåäöAEIOUYÅÄÖ"
-string = "Vad kul Python programmering är"
-rovarstring = "VoVadod kokulol PoPytothohonon poprorogogroramommomerorinongog äror"
-
-
-# Stjärnspråket: en stjärna läggs till efter varje bokstav.
-# "Stjärna" blir S*t*j*ä*r*n*a.
-# Här har vi dock ändrat koden litet till en modul rubrik.
-def stjarnsprak(lanuage):
-    print("".join(
-        l + '*'  # Lägg till en stjärna efter aktuell bokstav.
-        # Kolla om aktuell bokstav är med i våra definierade strängar...
-        if l in consonants
-        or l in vowels
-        else l  # Annars ersätter vi med ett frågettecken.
-        for l in lanuage))
+CONSONANTS = set("bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ")
+VOWELS = set("aeiouyåäöAEIOUYÅÄÖ")
 
 
-# Viskspråket: alla vokaler tas bort.
-# Om man matar in "kor" blir det k + ' ' + r  = "k r".
-def visksprak(lanuage):
-    print("Viskspråket: " + "".join(
-        ' '  # Mellanslag ersätter aktuell vokal.
-        if l in vowels  # Kolla om aktuell bokstav är en vokal.
-        else l  # Annars lägg bara till akuell bokstav till den nya strängen.
-        for l in lanuage)  # Loopa igenom alla inmatade bokstäver och gör ovan tills texten är slut.
-        + "\n")
+def stjarnsprak(text: str) -> str:
+    """Lägger till '*' mellan bokstäver i varje ord: 'Stjärna' -> 'S*t*j*ä*r*n*a'."""
+    words = text.split(" ")
+    result = []
+    for word in words:
+        letters = [c for c in word if c in CONSONANTS or c in VOWELS]
+        # Om ordet bara består av bokstäver läggs '*' enbart mellan dem
+        if len(letters) == len(word) and len(word) > 1:
+            result.append("*".join(word))
+        else:
+            result.append(word)
+    return " ".join(result)
 
 
-# Rövarspråket: alla konsonanter fördubblas och 'o' stoppas in emellan.
-# "kor" blir  k + (o + k) + o + r + (o + r) = "kokoror".
-def rovarsprak(lanuage):
-    print("".join(
-        # Lägg till o efter aktuell bokstav och lägg even till en kopia av bokstaven efter o.
-        l + 'o' + l
-        if l in consonants  # Kolla om aktuell bokstav är en konsonant.
-        else l  # Annars lägg bara till akuell bokstav till den nya strängen.
-        for l in lanuage)  # Loopa igenom alla inmatade bokstäver och gör ovan tills texten är slut.
-        + "\n")
+def visksprak(text: str) -> str:
+    """Ersätter alla vokaler med mellanslag: 'kor' -> 'k r'."""
+    return "".join(" " if c in VOWELS else c for c in text)
 
 
-# Rövarspråket: alla konsonanter fördubblas och 'o' stoppas in emellan.
-# Denna funktion där bort vokalen och dubbletten av varje funnen konsonant, vid varje loop.
-def svenskarovarsprak(language):
-    # translation = ""
-    for i in range(0, len(language)):
-        if i < len(language) and language[i] in consonants:
-            language = language[:i] + language[i + 2:]
-    # translation = language[:i + 1]
-    # range tar hela aktuella input strängen. Strängen förkortas genom slice.
-    # Vi ser först till att undvika string index out of range error genom att se till att i är
-    # mindre än aktuella inputsträngens längd. Sedan kollar vi om det är en konsonant.
-    # Sen gör vi en slice för att ta med alla tecken från början av inkommande rövarspråkssträng, fram till och med i.
-    # Vi gör en ny slice för att bli av med en vokal och följande konsonant.
-    # Vi sätter sen ihop rövarspråksträngen ingen, nu med minskad längd vilket påverkar
-    # range i for loopen. Vi behöver inte translation variabeln men den kan användas under debugging
-    # för att se hur itereringen fungerar.
-
-    print("Översättning till Svenska från Rövarspråket: " + language + "\n")
+def rovarsprak(text: str) -> str:
+    """Fördubblar konsonanter med ett 'o' emellan: 'kor' -> 'kokoror'."""
+    return "".join(f"{c}o{c}" if c in CONSONANTS else c for c in text)
 
 
-# Bebisar säger bara första stavelsen i varje ord men de säger den tre gånger:
-# En stavelse är alla tecken i ett ord fram till och med första vokalen.
-def bebissprak(language):
-    translation = ""
-    cut_letters = ""
-    for l in language.split():
-        for i in range(0, len(l)):
-            if i < len(l) and l[i] in vowels:
-                cut_letters = l[:i + 1] * 3
-                translation += cut_letters + " "
+def svenskarovarsprak(text: str) -> str:
+    """Översätter tillbaka från rövarspråket till svenska."""
+    result = []
+    i = 0
+    while i < len(text):
+        result.append(text[i])
+        if (
+            text[i] in CONSONANTS
+            and i + 2 < len(text)
+            and text[i + 1].lower() == "o"
+            and text[i + 2].lower() == text[i].lower()
+        ):
+            i += 3
+        else:
+            i += 1
+    return "".join(result)
+
+
+def bebissprak(text: str) -> str:
+    """Upprepar första stavelsen (fram till första vokalen) tre gånger."""
+    result = []
+    for word in text.split():
+        for i, c in enumerate(word):
+            if c in VOWELS:
+                result.append(word[: i + 1] * 3)
                 break
-    print("Bebisspråket: " + translation + "\n")
+        else:
+            result.append(word)  # Behåll ord som helt saknar vokaler
+    return " ".join(result)
 
 
-# För varje ord: bokstäverna före första vokalen sätts sist och "all" läggs till på slutet.
-def allspraket(language):
-    translation = ""
-    cut_consonants = ""
-    all = "all"
-    for l in language.split():
-        for i in range(0, len(l)):
-            if i < len(l) and l[i] in vowels:
-                cut_consonants = l[:i]
-                translation += l[i:] + cut_consonants + all + " "
+def allspraket(text: str) -> str:
+    """Flyttar konsonanter före första vokalen till slutet och lägger till 'all'."""
+    result = []
+    for word in text.split():
+        for i, c in enumerate(word):
+            if c in VOWELS:
+                result.append(f"{word[i:]}{word[:i]}all")
                 break
+        else:
+            result.append(f"{word}all")
+    return " ".join(result)
 
-    print("Allspråket: " + translation + "\n")
 
-
-# Ordet kuperas som i allspråket fast efter första vokalen. "fi" sätts först och "kon" sist.
-def fikonspraket(language):
-    translation = ""
-    cut_letters = ""
-    fi = "fi"
-    kon = "kon"
-    for l in language.split():
-        for i in range(0, len(l)):
-            if i < len(l) and l[i] in vowels:
-                cut_letters = l[:i + 1]
-                translation += fi + l[i + 1:] + cut_letters + kon + " "
+def fikonspraket(text: str) -> str:
+    """Delar ordet efter första vokalen, sätter 'fi' först och 'kon' sist."""
+    result = []
+    for word in text.split():
+        for i, c in enumerate(word):
+            if c in VOWELS:
+                result.append(f"fi{word[i + 1:]}{word[: i + 1]}kon")
                 break
-    print("Fikonspråket: " + translation + "\n")
+        else:
+            result.append(f"fi{word}kon")
+    return " ".join(result)
 
 
-def bash(file, sprak):
-    translation = ""
-
-    with open(file) as filein:
-        for line in filein:
-            translation += line
-
-    if sprak == "ST":
-        stjarnsprak(translation)
-    elif sprak == "R":
-        rovarsprak(translation)
-    elif sprak == "S":
-        svenskarovarsprak(translation)
-    elif sprak == "B":
-        bebissprak(translation)
-    elif sprak == "A":
-        allspraket(translation)
-    elif sprak == "F":
-        fikonspraket(translation)
-    elif sprak == "V":
-        visksprak(translation)
+LANGUAGES = {
+    "st": ("Stjärnspråket", stjarnsprak),
+    "vi": ("Viskspråket", visksprak),
+    "ro": ("Rövarspråket", rovarsprak),
+    "sv": ("Svenska från Rövarspråket", svenskarovarsprak),
+    "be": ("Bebisspråket", bebissprak),
+    "al": ("Allspråket", allspraket),
+    "fi": ("Fikonspråket", fikonspraket),
+}
 
 
 def main():
-    # Lägger till args
-    parser = argparse.ArgumentParser(description="Odd Languages")
+    parser = argparse.ArgumentParser(
+        description="Översätt text, filer eller stdin till svenska lekspråk."
+    )
     parser.add_argument(
-        "file", help="Choose a file for translation: --file FILE", type=str)
-    parser.add_argument("--st", help="Star Language --st ST", type=str)
-    parser.add_argument("--r", help="Robber's language --r R", type=str)
-    parser.add_argument("--s", help="Robber's To Swedish --s S", type=str)
-    parser.add_argument("--b", help="Baby Language --b B", type=str)
-    parser.add_argument("--a", help="All Language --a A", type=str)
-    parser.add_argument("--f", help="Fig Language --f F", type=str)
-    parser.add_argument("--v", help="Whisper Language --v V", type=str)
-    parser.add_argument("--lang", help="Choose language for one line translation: St Ro Sv Be Al Fi LANG\n" +
-                        " WHEN YOU USE ECHO: echo |.filename.py 'text to be translated' --spraak 'Ro' ")
+        "text",
+        nargs="?",
+        help="Text att översätta (om varken --file eller pipe används).",
+    )
+    parser.add_argument(
+        "-f", "--file", help="Sökväg till en textfil att översätta."
+    )
+    parser.add_argument(
+        "-l",
+        "--lang",
+        choices=LANGUAGES.keys(),
+        required=True,
+        help="Målspråk: st (stjärn), vi (visk), ro (rövar), sv (från rövar), be (bebis), al (all), fi (fikon).",
+    )
     args = parser.parse_args()
 
-    # Filöversättning
-    if args.file != "":
-        file = args.file
-    if args.st == "ST":
-        bash(file, "ST")
-    if args.r == "R":
-        bash(file, "R")
-    if args.s == "S":
-        bash(file, "S")
-    if args.b == "B":
-        bash(file, "B")
-    if args.a == "A":
-        bash(file, "A")
-    if args.f == "F":
-        bash(file, "F")
-    if args.v == "V":
-        bash(file, "V")
+    # Hämta indata från fil, direkt argument eller stdin (pipe)
+    if args.file:
+        try:
+            with open(args.file, encoding="utf-8") as f:
+                input_text = f.read()
+        except FileNotFoundError:
+            sys.exit(f"Fel: Filen '{args.file}' hittades inte.")
+    elif args.text:
+        input_text = args.text
+    elif not sys.stdin.isatty():
+        input_text = sys.stdin.read().strip()
+    else:
+        parser.error("Du måste ange en text, en fil (--file) eller skicka in text via pipe.")
 
-    # En rads översättning
-    if args.lang == "St":
-        stjarnsprak(file)
-    if args.lang == "Ro":
-        rovarsprak(file)
-    if args.lang == "Sv":
-        svenskarovarsprak(file)
-    if args.lang == "Be":
-        bebissprak(file)
-    if args.lang == "Al":
-        allspraket(file)
-    if args.lang == "Fi":
-        fikonspraket(file)
-    if args.lang == "Vi":
-        visksprak(file)
+    lang_name, func = LANGUAGES[args.lang]
+    print(f"{lang_name}: {func(input_text)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
